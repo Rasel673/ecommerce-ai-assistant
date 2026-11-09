@@ -1,0 +1,51 @@
+{
+    "name": "rasel673/ecommerce-ai-assistant",
+    "description": "A reusable AI chatbot and analytics agent for Laravel ecommerce websites.",
+    "keywords": [
+        "laravel",
+        "ecommerce",
+        "ai",
+        "chatbot",
+        "analytics",
+        "openai",
+        "function-calling",
+        "sales-agent"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rasel",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/http": "^9.0|^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "phpunit/phpunit": "^10.0|^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rasel673\\EcommerceAI\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Rasel673\\EcommerceAI\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Rasel673\\EcommerceAI\\EcommerceAIServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
+

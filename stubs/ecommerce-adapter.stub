@@ -1,0 +1,229 @@
+<?php
+
+namespace {{ namespace }};
+
+use Rasel673\EcommerceAI\Contracts\EcommerceAdapterInterface;
+use Rasel673\EcommerceAI\Support\DateRangeResolver;
+use Illuminate\Support\Facades\DB;
+
+class {{ class }} implements EcommerceAdapterInterface
+{
+    /**
+     * Retrieve aggregated sales metrics for a specified period or custom range.
+     *
+     * @param array<string, mixed> $filters E.g., ['period' => 'today', 'start_date' => null, 'end_date' => null, 'store_id' => null]
+     * @return array{
+     *     period: string,
+     *     total_orders: int,
+     *     gross_sales: float,
+     *     currency: string,
+     *     start_date: string|null,
+     *     end_date: string|null
+     * }
+     */
+    public function getSalesSummary(array $filters = []): array
+    {
+        $range = DateRangeResolver::resolve($filters);
+        $currency = config('ecommerce-ai.currency', 'BDT');
+
+        $query = DB::table('orders');
+
+        if ($range['start'] && $range['end']) {
+            $query->whereBetween('created_at', [$range['start'], $range['end']]);
+        }
+
+        if (!empty($filters['store_id'])) {
+            $query->where('store_id', $filters['store_id']);
+        }
+
+        $totalOrders = (int) $query->count();
+        $grossSales = (float) ($query->sum('total_amount') ?? 0.0);
+
+        return [
+            'period' => $range['period'],
+            'total_orders' => $totalOrders,
+            'gross_sales' => round($grossSales, 2),
+            'currency' => $currency,
+            'start_date' => $range['start_string'],
+            'end_date' => $range['end_string'],
+        ];
+    }
+
+    /**
+     * Retrieve order counts grouped by status, along with average order value.
+     *
+     * @param array<string, mixed> $filters
+     * @return array{
+     *     total_orders: int,
+     *     status_breakdown: array<string, int>,
+     *     average_order_value: float,
+     *     currency: string,
+     *     period: string
+     * }
+     */
+    public function getOrderSummary(array $filters = []): array
+    {
+        $range = DateRangeResolver::resolve($filters);
+        $currency = config('ecommerce-ai.currency', 'BDT');
+
+        $query = DB::table('orders');
+
+        if ($range['start'] && $range['end']) {
+            $query->whereBetween('created_at', [$range['start'], $range['end']]);
+        }
+
+        if (!empty($filters['store_id'])) {
+            $query->where('store_id', $filters['store_id']);
+        }
+
+        $totalOrders = (int) $query->count();
+        $averageOrderValue = (float) ($query->avg('total_amount') ?? 0.0);
+
+        $statusCounts = (clone $query)
+            ->select('status', DB::raw('count(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        return [
+            'total_orders' => $totalOrders,
+            'status_breakdown' => $statusCounts,
+            'average_order_value' => round($averageOrderValue, 2),
+            'currency' => $currency,
+            'period' => $range['period'],
+        ];
+    }
+
+    /**
+     * Retrieve top-selling products by quantity sold or revenue.
+     *
+     * @param int $limit
+     * @param array<string, mixed> $filters
+     * @return array<int, array{
+     *     id: int|string,
+     *     name: string,
+     *     sku: string|null,
+     *     total_quantity_sold: int,
+     *     total_revenue: float
+     * }>
+     */
+    public function getTopSellingProducts(int $limit = 5, array $filters = []): array
+    {
+        $range = DateRangeResolver::resolve($filters);
+
+        $query = DB::table('order_items')
+            ->join('products', 'order_items.product_id', '=', 'products.id');
+
+        if ($range['start'] && $range['end']) {
+            $query->whereBetween('order_items.created_at', [$range['start'], $range['end']]);
+        }
+
+        if (!empty($filters['store_id'])) {
+            $query->where('order_items.store_id', $filters['store_id']);
+        }
+
+        $items = $query->select([
+            'products.id',
+            'products.name',
+            'products.sku',
+            DB::raw('SUM(order_items.qty) as total_quantity_sold'),
+            DB::raw('SUM(order_items.qty * order_items.price) as total_revenue'),
+        ])
+        ->groupBy('products.id', 'products.name', 'products.sku')
+        ->orderByDesc('total_quantity_sold')
+        ->limit($limit)
+        ->get();
+
+        return $items->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'sku' => $item->sku,
+                'total_quantity_sold' => (int) $item->total_quantity_sold,
+                'total_revenue' => round((float) $item->total_revenue, 2),
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Retrieve products that have fallen below a specified stock threshold.
+     *
+     * @param int $threshold
+     * @param int $limit
+     * @param array<string, mixed> $filters
+     * @return array<int, array{
+     *     id: int|string,
+     *     name: string,
+     *     sku: string|null,
+     *     current_stock: int,
+     *     threshold: int
+     * }>
+     */
+    public function getLowStockProducts(int $threshold = 10, int $limit = 10, array $filters = []): array
+    {
+        $query = DB::table('products')->where('stock', '<=', $threshold);
+
+        if (!empty($filters['store_id'])) {
+            $query->where('store_id', $filters['store_id']);
+        }
+
+        $items = $query->select(['id', 'name', 'sku', 'stock as current_stock'])
+            ->orderBy('stock', 'asc')
+            ->limit($limit)
+            ->get();
+
+        return $items->map(function ($item) use ($threshold) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'sku' => $item->sku,
+                'current_stock' => (int) $item->current_stock,
+                'threshold' => $threshold,
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Search product inventory by name or SKU.
+     *
+     * @param string $searchTerm
+     * @param array<string, mixed> $filters
+     * @return array<int, array{
+     *     id: int|string,
+     *     name: string,
+     *     sku: string|null,
+     *     current_stock: int,
+     *     price: float,
+     *     is_in_stock: bool
+     * }>
+     */
+    public function getProductStock(string $searchTerm, array $filters = []): array
+    {
+        $query = DB::table('products')
+            ->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('sku', 'LIKE', "%{$searchTerm}%");
+            });
+
+        if (!empty($filters['store_id'])) {
+            $query->where('store_id', $filters['store_id']);
+        }
+
+        $items = $query->select(['id', 'name', 'sku', 'stock as current_stock', 'price'])
+            ->limit(15)
+            ->get();
+
+        return $items->map(function ($item) {
+            $stock = (int) $item->current_stock;
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'sku' => $item->sku,
+                'current_stock' => $stock,
+                'price' => round((float) $item->price, 2),
+                'is_in_stock' => $stock > 0,
+            ];
+        })->toArray();
+    }
+}
+
