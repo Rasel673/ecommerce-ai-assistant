@@ -15,7 +15,7 @@ class AIProviderFactory
      */
     public static function make(?string $driver = null): AIProviderInterface
     {
-        $driver = strtolower($driver ?? config('ecommerce-ai.provider', 'openai'));
+        $driver = strtolower($driver ?? config('ecommerce-ai.provider', 'gemini'));
 
         switch ($driver) {
             case 'openai':

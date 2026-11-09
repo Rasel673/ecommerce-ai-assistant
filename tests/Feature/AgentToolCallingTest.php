@@ -9,6 +9,12 @@ use Rasel673\EcommerceAI\Tests\TestCase;
 
 class AgentToolCallingTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config()->set('ecommerce-ai.provider', 'openai');
+    }
+
     #[Test]
     public function it_executes_tool_call_flow_and_returns_natural_language_answer(): void
     {

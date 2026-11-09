@@ -12,8 +12,17 @@ use Rasel673\EcommerceAI\Tests\TestCase;
 class OpenAIProviderTest extends TestCase
 {
     #[Test]
-    public function it_resolves_ai_provider_from_container(): void
+    public function it_resolves_default_gemini_provider_from_container(): void
     {
+        $provider = $this->app->make(AIProviderInterface::class);
+
+        $this->assertInstanceOf(\Rasel673\EcommerceAI\Providers\GeminiProvider::class, $provider);
+    }
+
+    #[Test]
+    public function it_resolves_openai_provider_when_configured(): void
+    {
+        config()->set('ecommerce-ai.provider', 'openai');
         $provider = $this->app->make(AIProviderInterface::class);
 
         $this->assertInstanceOf(OpenAIProvider::class, $provider);

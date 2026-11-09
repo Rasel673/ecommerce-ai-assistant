@@ -8,6 +8,12 @@ use Rasel673\EcommerceAI\Tests\TestCase;
 
 class ChatApiTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config()->set('ecommerce-ai.provider', 'openai');
+    }
+
     #[Test]
     public function it_returns_successful_chat_response(): void
     {

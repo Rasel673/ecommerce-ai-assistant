@@ -20,7 +20,7 @@ return [
     | Supported: 'openai', 'anthropic', 'gemini', 'groq', 'deepseek', 'ollama', 'mistral'
     |
     */
-    'provider' => env('ECOMMERCE_AI_PROVIDER', 'openai'),
+    'provider' => env('ECOMMERCE_AI_PROVIDER', 'gemini'),
 
     /*
     |--------------------------------------------------------------------------
@@ -29,9 +29,26 @@ return [
     |
     | Credentials, model names, and connection settings for each supported AI provider.
     | Sensitive keys should always be loaded through environment variables.
+    | Defaults configured with the latest free or low-cost tier models.
     |
     */
     'providers' => [
+        'gemini' => [
+            'api_key' => env('GEMINI_API_KEY'),
+            'model' => env('GEMINI_MODEL', 'gemini-3.5-flash'),
+            'timeout' => env('GEMINI_TIMEOUT', 30),
+            'temperature' => env('GEMINI_TEMPERATURE', 0.7),
+            'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
+        ],
+
+        'groq' => [
+            'api_key' => env('GROQ_API_KEY'),
+            'model' => env('GROQ_MODEL', 'openai/gpt-oss-120b'),
+            'timeout' => env('GROQ_TIMEOUT', 30),
+            'temperature' => env('GROQ_TEMPERATURE', 0.7),
+            'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+        ],
+
         'openai' => [
             'api_key' => env('OPENAI_API_KEY'),
             'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
@@ -40,7 +57,6 @@ return [
             'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
         ],
 
-
         'anthropic' => [
             'api_key' => env('ANTHROPIC_API_KEY'),
             'model' => env('ANTHROPIC_MODEL', 'claude-3-5-haiku-20241022'),
@@ -48,24 +64,6 @@ return [
             'temperature' => env('ANTHROPIC_TEMPERATURE', 0.7),
             'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com/v1'),
             'version' => env('ANTHROPIC_VERSION', '2023-06-01'),
-        ],
-
-
-        'gemini' => [
-            'api_key' => env('GEMINI_API_KEY'),
-            'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
-            'timeout' => env('GEMINI_TIMEOUT', 30),
-            'temperature' => env('GEMINI_TEMPERATURE', 0.7),
-            'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
-        ],
-
-        
-        'groq' => [
-            'api_key' => env('GROQ_API_KEY'),
-            'model' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
-            'timeout' => env('GROQ_TIMEOUT', 30),
-            'temperature' => env('GROQ_TEMPERATURE', 0.7),
-            'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
         ],
 
         'deepseek' => [
@@ -86,7 +84,7 @@ return [
 
         'mistral' => [
             'api_key' => env('MISTRAL_API_KEY'),
-            'model' => env('MISTRAL_MODEL', 'mistral-small-latest'),
+            'model' => env('MISTRAL_MODEL', 'open-mistral-7b'),
             'timeout' => env('MISTRAL_TIMEOUT', 30),
             'temperature' => env('MISTRAL_TEMPERATURE', 0.7),
             'base_url' => env('MISTRAL_BASE_URL', 'https://api.mistral.ai/v1'),

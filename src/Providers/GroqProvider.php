@@ -15,7 +15,7 @@ class GroqProvider extends OpenAIProvider
     ) {
         parent::__construct(
             apiKey: $apiKey ?? config('ecommerce-ai.providers.groq.api_key', config('ecommerce-ai.groq.api_key')),
-            model: $model ?? config('ecommerce-ai.providers.groq.model', config('ecommerce-ai.groq.model', 'llama-3.3-70b-versatile')),
+            model: $model ?? config('ecommerce-ai.providers.groq.model', config('ecommerce-ai.groq.model', 'openai/gpt-oss-120b')),
             timeout: $timeout ?? (int) config('ecommerce-ai.providers.groq.timeout', 30),
             temperature: $temperature ?? config('ecommerce-ai.providers.groq.temperature', 0.7),
             baseUrl: $baseUrl ?? config('ecommerce-ai.providers.groq.base_url', 'https://api.groq.com/openai/v1')
