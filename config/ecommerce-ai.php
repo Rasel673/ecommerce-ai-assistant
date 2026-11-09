@@ -35,11 +35,12 @@ return [
     'providers' => [
         'gemini' => [
             'api_key' => env('GEMINI_API_KEY'),
-            'model' => env('GEMINI_MODEL', 'gemini-3.5-flash'),
+            'model' => env('GEMINI_MODEL', 'gemini-flash-lite-latest'),
             'timeout' => env('GEMINI_TIMEOUT', 30),
             'temperature' => env('GEMINI_TEMPERATURE', 0.7),
             'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
         ],
+        
 
         'groq' => [
             'api_key' => env('GROQ_API_KEY'),

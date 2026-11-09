@@ -23,7 +23,7 @@ class GeminiProvider implements AIProviderInterface
         ?string $baseUrl = null
     ) {
         $this->apiKey = $apiKey ?? config('ecommerce-ai.providers.gemini.api_key', config('ecommerce-ai.gemini.api_key'));
-        $this->model = $model ?? config('ecommerce-ai.providers.gemini.model', config('ecommerce-ai.gemini.model', 'gemini-3.5-flash'));
+        $this->model = $model ?? config('ecommerce-ai.providers.gemini.model', config('ecommerce-ai.gemini.model', 'gemini-flash-lite-latest'));
         $this->timeout = $timeout ?? (int) config('ecommerce-ai.providers.gemini.timeout', 30);
         $this->temperature = $temperature ?? config('ecommerce-ai.providers.gemini.temperature', 0.7);
         $this->baseUrl = rtrim($baseUrl ?? config('ecommerce-ai.providers.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
