@@ -54,7 +54,7 @@ class GeminiProvider implements AIProviderInterface
                 ];
             } elseif ($role === 'tool') {
                 $contents[] = [
-                    'role' => 'function',
+                    'role' => 'user',
                     'parts' => [
                         [
                             'functionResponse' => [
@@ -76,12 +76,18 @@ class GeminiProvider implements AIProviderInterface
                             ? $tc['function']['arguments']
                             : json_decode($tc['function']['arguments'] ?? '{}', true);
 
-                        $parts[] = [
+                        $funcPart = [
                             'functionCall' => [
                                 'name' => $tc['function']['name'] ?? '',
                                 'args' => $args ?: (object)[],
                             ],
                         ];
+
+                        if (!empty($tc['thoughtSignature'])) {
+                            $funcPart['thoughtSignature'] = $tc['thoughtSignature'];
+                        }
+
+                        $parts[] = $funcPart;
                     }
                 }
 
@@ -125,24 +131,42 @@ class GeminiProvider implements AIProviderInterface
 
         $timeout = $options['timeout'] ?? $this->timeout;
 
-        try {
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-            ])->timeout($timeout)
-              ->post($url, $payload);
-        } catch (Throwable $e) {
-            throw new AIProviderException(
-                'Gemini request failed due to connection error: ' . $e->getMessage(),
-                $e->getCode(),
-                $e
-            );
+        $maxAttempts = 3;
+        $attempt = 0;
+        $response = null;
+
+        while ($attempt < $maxAttempts) {
+            $attempt++;
+            try {
+                $response = Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                ])->timeout($timeout)
+                  ->post($url, $payload);
+
+                // If 503 high demand spike, wait briefly and retry
+                if ($response->status() === 503 && $attempt < $maxAttempts) {
+                    usleep(1500000); // 1.5s delay
+                    continue;
+                }
+
+                break;
+            } catch (Throwable $e) {
+                if ($attempt >= $maxAttempts) {
+                    throw new AIProviderException(
+                        'Gemini request failed due to connection error: ' . $e->getMessage(),
+                        $e->getCode(),
+                        $e
+                    );
+                }
+                usleep(1000000);
+            }
         }
 
-        if ($response->failed()) {
-            $errorMessage = $response->json('error.message') ?? 'HTTP error ' . $response->status();
+        if (!$response || $response->failed()) {
+            $errorMessage = $response?->json('error.message') ?? 'HTTP error ' . ($response?->status() ?? 500);
             throw new AIProviderException(
-                "Gemini API error [{$response->status()}]: {$errorMessage}",
-                $response->status()
+                "Gemini API error [{$response?->status()}]: {$errorMessage}",
+                $response?->status() ?? 500
             );
         }
 
@@ -158,7 +182,7 @@ class GeminiProvider implements AIProviderInterface
                 $textContent .= $part['text'];
             }
             if (isset($part['functionCall'])) {
-                $normalizedToolCalls[] = [
+                $toolCall = [
                     'id' => uniqid('call_gemini_'),
                     'type' => 'function',
                     'function' => [
@@ -166,6 +190,12 @@ class GeminiProvider implements AIProviderInterface
                         'arguments' => json_encode($part['functionCall']['args'] ?? []),
                     ],
                 ];
+
+                if (isset($part['thoughtSignature'])) {
+                    $toolCall['thoughtSignature'] = $part['thoughtSignature'];
+                }
+
+                $normalizedToolCalls[] = $toolCall;
             }
         }
 

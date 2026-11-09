@@ -124,6 +124,7 @@ class AgentRunner
                 // Append tool execution result for the model
                 $messages[] = [
                     'role' => 'tool',
+                    'name' => $functionName,
                     'tool_call_id' => $toolCallId,
                     'content' => json_encode($toolResult),
                 ];
