@@ -217,3 +217,4 @@ class GeminiProvider implements AIProviderInterface
         }
     }
 }
+
