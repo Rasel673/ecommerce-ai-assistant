@@ -7,6 +7,7 @@ use Rasel673\EcommerceAI\Adapters\GenericEcommerceAdapter;
 use Rasel673\EcommerceAI\Agent\AgentRunner;
 use Rasel673\EcommerceAI\Contracts\AIProviderInterface;
 use Rasel673\EcommerceAI\Contracts\EcommerceAdapterInterface;
+use Rasel673\EcommerceAI\Providers\AIProviderFactory;
 use Rasel673\EcommerceAI\Providers\OpenAIProvider;
 use Rasel673\EcommerceAI\Registry\ToolRegistry;
 use Rasel673\EcommerceAI\Tools\LowStockTool;
@@ -28,9 +29,9 @@ class EcommerceAIServiceProvider extends ServiceProvider
             'ecommerce-ai'
         );
 
-        // Bind default AI Provider interface to OpenAI implementation
+        // Bind default AI Provider interface via AIProviderFactory
         $this->app->singleton(AIProviderInterface::class, function () {
-            return new OpenAIProvider();
+            return AIProviderFactory::make();
         });
 
         // Bind default Ecommerce Adapter interface

@@ -103,6 +103,34 @@ ecommerce-ai-assistant/
 
 ---
 
+## Supported AI Providers
+
+The package supports 7 AI providers out of the box through `AIProviderFactory`:
+
+| Provider | Driver Key | Default Model | Environment Variables |
+| :--- | :--- | :--- | :--- |
+| **OpenAI** | `openai` | `gpt-4o-mini` | `OPENAI_API_KEY`, `OPENAI_MODEL` |
+| **Anthropic Claude** | `anthropic` or `claude` | `claude-3-5-haiku-20241022` | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` |
+| **Google Gemini** | `gemini` or `google` | `gemini-1.5-flash` | `GEMINI_API_KEY`, `GEMINI_MODEL` |
+| **Groq** | `groq` | `llama-3.3-70b-versatile` | `GROQ_API_KEY`, `GROQ_MODEL` |
+| **DeepSeek** | `deepseek` | `deepseek-chat` | `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL` |
+| **Ollama (Local)** | `ollama` | `llama3.2` | `OLLAMA_BASE_URL` (default: `http://localhost:11434/v1`) |
+| **Mistral AI** | `mistral` | `mistral-small-latest` | `MISTRAL_API_KEY`, `MISTRAL_MODEL` |
+
+### Selecting the Provider:
+In your `.env`:
+```env
+# Choose: openai, anthropic, gemini, groq, deepseek, ollama, mistral
+ECOMMERCE_AI_PROVIDER=gemini
+
+# Provider credentials
+GEMINI_API_KEY=your-gemini-api-key
+```
+
+All providers automatically support the 5 ecommerce analytics tools with autonomous tool calling!
+
+---
+
 ## Installation
 
 ### 1. Require Package

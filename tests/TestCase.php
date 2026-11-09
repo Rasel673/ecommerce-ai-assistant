@@ -31,6 +31,8 @@ abstract class TestCase extends OrchestraTestCase
         $app['config']->set('ecommerce-ai.enabled', true);
         $app['config']->set('ecommerce-ai.openai.api_key', 'test-key');
         $app['config']->set('ecommerce-ai.openai.model', 'gpt-4o-mini');
+        $app['config']->set('ecommerce-ai.providers.anthropic.base_url', 'https://api.anthropic.com/v1');
+        $app['config']->set('ecommerce-ai.providers.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta');
     }
 }
 
