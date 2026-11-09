@@ -226,8 +226,91 @@
         padding: 10px 14px;
         border-radius: 14px;
         font-size: 14px;
-        line-height: 1.5;
+        line-height: 1.55;
         word-break: break-word;
+    }
+
+    .ecommerce-ai-bubble p {
+        margin: 0 0 8px 0;
+    }
+
+    .ecommerce-ai-bubble p:last-child {
+        margin-bottom: 0;
+    }
+
+    .ecommerce-ai-bubble ol.ecommerce-ai-list {
+        margin: 8px 0;
+        padding-left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .ecommerce-ai-bubble ul.ecommerce-ai-list {
+        margin: 8px 0;
+        padding-left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .ecommerce-ai-bubble ul.ecommerce-ai-sublist {
+        margin: 4px 0 6px 0;
+        padding-left: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        color: #4b5563;
+        font-size: 13px;
+        list-style-type: circle;
+    }
+
+    .ecommerce-ai-bubble li {
+        line-height: 1.45;
+    }
+
+    .ecommerce-ai-bubble strong {
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .ecommerce-ai-msg-user .ecommerce-ai-bubble strong {
+        color: #ffffff;
+    }
+
+    .ecommerce-ai-code {
+        background: rgba(0, 0, 0, 0.06);
+        color: #d946ef;
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-family: monospace;
+    }
+
+    .ecommerce-ai-spacer {
+        height: 8px;
+    }
+
+    .ecommerce-ai-table-wrap {
+        overflow-x: auto;
+        margin: 8px 0;
+    }
+
+    .ecommerce-ai-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .ecommerce-ai-table th, .ecommerce-ai-table td {
+        padding: 6px 8px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .ecommerce-ai-table th {
+        background: #f3f4f6;
+        font-weight: 600;
     }
 
     .ecommerce-ai-msg-assistant .ecommerce-ai-bubble {
@@ -378,13 +461,139 @@
         messages.scrollTop = messages.scrollHeight;
     }
 
+    function renderMarkdown(rawText) {
+        if (!rawText) return '';
+
+        // Step 1: Escape HTML entities for XSS safety
+        let text = String(rawText)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        // Step 2: Auto-split unformatted inline lists if model returned run-on text
+        text = text.replace(/([^\n])\s+(\d+\.\s+[\*A-Za-z0-9])/g, '$1\n$2');
+        text = text.replace(/([^\n])\s+-\s+(\*\*[A-Za-z0-9])/g, '$1\n   - $2');
+        text = text.replace(/([^\n])\s+(Let me know|If you (?:would|need)|Feel free to|Would you like|Do you want)/gi, '$1\n\n$2');
+
+        // Step 3: Inline code `code`
+        text = text.replace(/`([^`]+)`/g, '<code class="ecommerce-ai-code">$1</code>');
+
+        // Step 4: Bold **bold** or __bold__
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/__(.*?)__/g, '<strong>$1</strong>');
+
+        // Step 5: Process line by line into structured lists & paragraphs
+        const lines = text.split(/\r?\n/);
+        let out = [];
+        let listStack = [];
+        let tableRows = [];
+        let inTable = false;
+
+        function closeAllLists() {
+            while (listStack.length > 0) {
+                out.push('</' + listStack.pop() + '>');
+            }
+        }
+
+        function flushTable() {
+            if (!inTable || tableRows.length === 0) {
+                inTable = false;
+                tableRows = [];
+                return;
+            }
+            let html = '<div class="ecommerce-ai-table-wrap"><table class="ecommerce-ai-table">';
+            let isHeader = true;
+            for (let i = 0; i < tableRows.length; i++) {
+                const row = tableRows[i];
+                if (row.match(/^\|?(\s*:?-+:?\s*\|?)+$/)) {
+                    isHeader = false;
+                    continue;
+                }
+                const cells = row.split('|').map(c => c.trim());
+                if (cells.length > 0 && cells[0] === '') cells.shift();
+                if (cells.length > 0 && cells[cells.length - 1] === '') cells.pop();
+                if (cells.length === 0) continue;
+                const tag = isHeader ? 'th' : 'td';
+                html += '<tr>' + cells.map(c => '<' + tag + '>' + c + '</' + tag + '>').join('') + '</tr>';
+                isHeader = false;
+            }
+            html += '</table></div>';
+            out.push(html);
+            tableRows = [];
+            inTable = false;
+        }
+
+        for (let i = 0; i < lines.length; i++) {
+            const rawLine = lines[i];
+            const trimmed = rawLine.trim();
+
+            if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 2) {
+                closeAllLists();
+                inTable = true;
+                tableRows.push(trimmed);
+                continue;
+            } else if (inTable) {
+                flushTable();
+            }
+
+            if (trimmed === '') {
+                closeAllLists();
+                out.push('<div class="ecommerce-ai-spacer"></div>');
+                continue;
+            }
+
+            const olMatch = rawLine.match(/^(\s*)(\d+)\.\s+(.*)$/);
+            const ulMatch = rawLine.match(/^(\s*)([-*•])\s+(.*)$/);
+
+            if (olMatch) {
+                while (listStack.length > 0 && listStack[listStack.length - 1] === 'ul') {
+                    out.push('</' + listStack.pop() + '>');
+                }
+                if (listStack.length === 0) {
+                    listStack.push('ol');
+                    out.push('<ol class="ecommerce-ai-list">');
+                }
+                out.push('<li>' + olMatch[3] + '</li>');
+                continue;
+            }
+
+            if (ulMatch) {
+                const indent = ulMatch[1].length;
+                if (listStack.length > 0 && listStack[listStack.length - 1] === 'ol' && indent > 0) {
+                    listStack.push('ul');
+                    out.push('<ul class="ecommerce-ai-sublist">');
+                } else if (listStack.length === 0) {
+                    listStack.push('ul');
+                    out.push('<ul class="ecommerce-ai-list">');
+                }
+                out.push('<li>' + ulMatch[3] + '</li>');
+                continue;
+            }
+
+            closeAllLists();
+            out.push('<p class="ecommerce-ai-p">' + trimmed + '</p>');
+        }
+
+        closeAllLists();
+        if (inTable) flushTable();
+
+        return out.join('');
+    }
+
     function appendMessage(role, text) {
         const msgDiv = document.createElement('div');
         msgDiv.className = 'ecommerce-ai-msg ecommerce-ai-msg-' + role;
 
         const bubble = document.createElement('div');
         bubble.className = 'ecommerce-ai-bubble';
-        bubble.textContent = text; // Safe textContent escaping against XSS
+
+        if (role === 'assistant') {
+            bubble.innerHTML = renderMarkdown(text);
+        } else {
+            bubble.textContent = text; // User messages safely escaped
+        }
 
         msgDiv.appendChild(bubble);
         messages.appendChild(msgDiv);

@@ -110,7 +110,13 @@ return [
     | System prompt and input size validation limits for the chatbot.
     |
     */
-    'system_prompt' => env('ECOMMERCE_AI_SYSTEM_PROMPT', 'You are a helpful ecommerce AI assistant for this online store.'),
+    'system_prompt' => env('ECOMMERCE_AI_SYSTEM_PROMPT', "You are a professional ecommerce AI assistant for this online store. When answering questions:
+- Provide clear, well-structured, and concise responses.
+- When listing products, orders, or inventory items, format them one by one as a clean numbered list (1., 2., 3.).
+- Put each item on its own line and include indented sub-bullets for item details (such as Quantity Sold, Stock, Price, or Revenue).
+- Put a blank line between list items for clear readability.
+- Highlight product names, key metrics, and monetary amounts in bold.
+- Always use the store's configured currency symbol or code."),
     'max_input_length' => env('ECOMMERCE_AI_MAX_INPUT_LENGTH', 2000),
 
     /*
