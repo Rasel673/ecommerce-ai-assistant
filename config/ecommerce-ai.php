@@ -40,6 +40,7 @@ return [
             'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
         ],
 
+
         'anthropic' => [
             'api_key' => env('ANTHROPIC_API_KEY'),
             'model' => env('ANTHROPIC_MODEL', 'claude-3-5-haiku-20241022'),
@@ -49,6 +50,7 @@ return [
             'version' => env('ANTHROPIC_VERSION', '2023-06-01'),
         ],
 
+
         'gemini' => [
             'api_key' => env('GEMINI_API_KEY'),
             'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
@@ -57,6 +59,7 @@ return [
             'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
         ],
 
+        
         'groq' => [
             'api_key' => env('GROQ_API_KEY'),
             'model' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),

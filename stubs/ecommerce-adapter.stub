@@ -26,6 +26,7 @@ class {{ class }} implements EcommerceAdapterInterface
         $range = DateRangeResolver::resolve($filters);
         $currency = config('ecommerce-ai.currency', 'BDT');
 
+
         $query = DB::table('orders');
 
         if ($range['start'] && $range['end']) {
